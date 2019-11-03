@@ -1,5 +1,5 @@
 # To do:
-# Fixed simDiagBasis function, but need to go through and remove language like "basis" since it's not really appropriate, the matrix is not orthonomal. 
+
 # !! = important note to keep track of, or note for future changes.
 
 
@@ -22,7 +22,7 @@
 #'  binsearchtol( function(x) x-x0, target=0, range=c(0,2*x0) , tol=0.10)
 #'  binsearchtol( function(x) x-x0, target=0, range=c(0,2*x0) , tol=0.05)
 #'
-binsearchtol <- function(fun, tol, range, ...){
+binsearchtol <- function(fun, tol=0.01, range, ...){
   funTol <- function(x) fun(x*tol)
 
   soln <- binsearch(fun=funTol, range=range/tol, ...)
@@ -37,26 +37,32 @@ binsearchtol <- function(fun, tol, range, ...){
 #' 
 #' @param M1 a positive definite symmetric matrix
 #' @param M2 a symmetric matrix
+#' @param eigenM1 (optional) the value of \code{eigen(M1)}, if precomputed and available
+#' @param eigenM2 (optional) the value of \code{eigen(M2)}, if precomputed and available
 #' @param tol used for error checks
-#' @param return_diags should Q^(-1); Q'M1Q; and Q'BQ be returned.
-#' Resulting matrix Q gives  Q'M1Q=I (identity); Q'BQ = a diagonal matrix.
-#' Q is *not* orthonormal or even symmetric, but it is invertible.
-#' #########
-# #TEST
-# p <- 5
-# M1 <- diag(p) + crossprod(matrix(rnorm(p^2),p,p))
-# M1[1,] <- M1[,1] <- 0
-# M2 <- diag(p)+2
-# sdb <- simDiagBasis(M1=M1,M2=M2,tol=10^-10,return_diags=TRUE)
-# Q <- sdb$diagonalizer
-# QM1Q <- t(Q) %*% M1 %*% Q
-# QM2Q <- t(Q) %*% M2 %*% Q
-# range(QM1Q -diag(sdb$M1diag))
-# range(QM2Q -diag(sdb$M2diag))
-# range(Q %*% sdb$inverse_diagonalizer - diag(p))
-# range(sdb$inverse_diagonalizer %*% Q - diag(p))
-# #########
-simDiagBasis <- function(M1,M2, eigenM1=NULL, eigenM2=NULL,tol, return_diags=FALSE){
+#' @param return_diags should only the diagonalizing matrix be returned.
+#' @details This function determines an invertible matrix Q such that (Q' M1 Q) is an identity matrix, and (Q' M2 Q) is diagonal, where Q' denotes the transpose of Q. Note, Q is not necessarily orthonormal or symmetric.
+#' @return If \code{return_diags = FALSE}, the matrix Q is returned. Otherwise, a list with the following elements is returned
+#' \itemize{
+#' 		\item{diagonalizer}{ - the matrix Q}
+#'		\item{inverse_diagonalizer}{ - the inverse of Q}
+#'		\item{M1diag}{ - the diagonal elements of (Q' M1 Q), which will all be ones}
+#'		\item{M2diag}{ - the diagonal elements of (Q' M2 Q)}
+#' }
+#' @export
+#' @examples p <- 5
+#' M1 <- diag(p) + crossprod(matrix(rnorm(p^2),p,p))
+#' M1[1,] <- M1[,1] <- 0
+#' M2 <- diag(p)+2
+#' sdb <- sim_diag(M1=M1,M2=M2,tol=10^-10,return_diags=TRUE)
+#' Q <- sdb$diagonalizer
+#' QM1Q <- t(Q) %*% M1 %*% Q
+#' QM2Q <- t(Q) %*% M2 %*% Q
+#' range(QM1Q -diag(sdb$M1diag))
+#' range(QM2Q -diag(sdb$M2diag))
+#' range(Q %*% sdb$inverse_diagonalizer - diag(p))
+#' range(sdb$inverse_diagonalizer %*% Q - diag(p))
+sim_diag <- function(M1,M2, eigenM1=NULL, eigenM2=NULL, tol = 10^-4, return_diags=FALSE){
 	
 	if(!isSymmetric(M1)) stop('M1 must be symmetric')
 	if(!isSymmetric(M2)) stop('M2 must be symmetric')
@@ -75,7 +81,7 @@ simDiagBasis <- function(M1,M2, eigenM1=NULL, eigenM2=NULL,tol, return_diags=FAL
 		}
 		if(all(eigenM2$value>0)){ #M2 not pos def.
 			warning('M1 is not positive definite, but M2 is. Switching roles of M1 & M2')
-			out_pre <- simDiagBasis(M1=M2,M2=M1,eigenM1=eigenM2,tol=tol,return_diags=return_diags)
+			out_pre <- sim_diag(M1=M2,M2=M1,eigenM1=eigenM2,tol=tol,return_diags=return_diags)
 			if(!return_diags) return(out_pre)
 			out <- out_pre
 			out$M1diag <- out_pre$M2diag
@@ -298,7 +304,7 @@ min_QP_unconstrained <- function(M,v,tol){
 #' Solves a minimization problem of the form:
 #' 
 #' \deqn{ 	min_{x} x^T A_mat x + a_vec^T x }
-#' \deqn{ s.t. x^T B_mat x + b_vec^T x + k \leq 0,}
+#' \deqn{ such that x^T B_mat x + b_vec^T x + k \leq 0,}
 #' 
 #' where either \code{A_mat} or \code{B_mat} must be positive definite, but not necessarily both.
 #' 
@@ -312,8 +318,14 @@ min_QP_unconstrained <- function(M,v,tol){
 #' @param eigen_B_mat (optional) the precalculated result \code{eigen(B_mat)}, where B_mat is defined in the optimization problem below.
 #' @param verbose show progress from calculation
 #' @import quadprog
+#' @return a list with elements
+#' \itemize{
+#'	\item{soln}{ - the solution for x}
+#'	\item{constraint}{ - the value of the constraint function at the solution}
+#'	\item{objective}{ - the value of the objective function at the solution}
+#' }
 #' @export
-solve_QP1QC <- function(A_mat, a_vec, B_mat, b_vec, k, tol, eigen_B_mat=NULL, eigen_A_mat=NULL, verbose= TRUE){
+solve_QP1QC <- function(A_mat, a_vec, B_mat, b_vec, k, tol=10^-7, eigen_B_mat=NULL, eigen_A_mat=NULL, verbose= TRUE){
 
 	if(tol<0){tol <- abs(tol); warning('tol must be positive; switching sign')}
 	if(tol>.01){tol <- 0.01; warning('tol must be <0.01; changing value of tol')}
@@ -332,7 +344,7 @@ solve_QP1QC <- function(A_mat, a_vec, B_mat, b_vec, k, tol, eigen_B_mat=NULL, ei
 
 	####### Diagonalize
 	suppressWarnings({
-		sdb <-  simDiagBasis(
+		sdb <-  sim_diag(
 		M1=B_mat, M2=A_mat, eigenM1=eigen_B_mat, eigenM2= eigen_A_mat, tol=tol, return_diags=TRUE)
 	})
 	Q  <- sdb$diagonalizer

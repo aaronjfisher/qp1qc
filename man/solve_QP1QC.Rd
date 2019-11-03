@@ -4,8 +4,8 @@
 \alias{solve_QP1QC}
 \title{Solve (non-convex) quadratic program with 1 quadratic constraint}
 \usage{
-solve_QP1QC(A_mat, a_vec, B_mat, b_vec, k, tol, eigen_B_mat = NULL,
-  eigen_A_mat = NULL, verbose = TRUE)
+solve_QP1QC(A_mat, a_vec, B_mat, b_vec, k, tol = 10^-7,
+  eigen_B_mat = NULL, eigen_A_mat = NULL, verbose = TRUE)
 }
 \arguments{
 \item{A_mat}{see details below}
@@ -26,6 +26,14 @@ solve_QP1QC(A_mat, a_vec, B_mat, b_vec, k, tol, eigen_B_mat = NULL,
 
 \item{verbose}{show progress from calculation}
 }
+\value{
+a list with elements
+\itemize{
+\item{soln}{ - the solution for x}
+\item{constraint}{ - the value of the constraint function at the solution}
+\item{objective}{ - the value of the objective function at the solution}
+}
+}
 \description{
 Solves a possibly non-convex quadratic program with 1 quadratic constraint. Either \code{A_mat} or \code{B_mat} must be positive definite, but not necessarily both (see Details, below).
 }
@@ -33,7 +41,7 @@ Solves a possibly non-convex quadratic program with 1 quadratic constraint. Eith
 Solves a minimization problem of the form:
 
 \deqn{ 	min_{x} x^T A_mat x + a_vec^T x }
-\deqn{ s.t. x^T B_mat x + b_vec^T x + k \leq 0,}
+\deqn{ such that x^T B_mat x + b_vec^T x + k \leq 0,}
 
 where either \code{A_mat} or \code{B_mat} must be positive definite, but not necessarily both.
 }

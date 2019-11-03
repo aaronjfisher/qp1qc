@@ -4,7 +4,7 @@
 \alias{binsearchtol}
 \title{binary search with arbitrary resolution}
 \usage{
-binsearchtol(fun, tol, range, ...)
+binsearchtol(fun, tol = 0.01, range, ...)
 }
 \arguments{
 \item{fun}{a monotonic function over which we search (passed to \code{\link{binsearch}})}
