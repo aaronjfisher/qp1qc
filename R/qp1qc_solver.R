@@ -1,5 +1,5 @@
 # To do:
-
+# !! rather than requiring positive definiteness, also accept diagonal matrices?
 # !! = important note to keep track of, or note for future changes.
 
 
@@ -46,14 +46,14 @@ binsearchtol <- function(fun, tol=0.01, range, ...){
 #' \itemize{
 #' 		\item{diagonalizer}{ - the matrix Q}
 #'		\item{inverse_diagonalizer}{ - the inverse of Q}
-#'		\item{M1diag}{ - the diagonal elements of (Q' M1 Q), which will all be ones}
+#'		\item{M1diag}{ - the diagonal elements of (Q' M1 Q)}
 #'		\item{M2diag}{ - the diagonal elements of (Q' M2 Q)}
 #' }
 #' @export
 #' @examples p <- 5
-#' M1 <- diag(p) + crossprod(matrix(rnorm(p^2),p,p))
-#' M1[1,] <- M1[,1] <- 0
-#' M2 <- diag(p)+2
+#' M1 <- diag(p)+2
+#' M2 <- diag(p) + crossprod(matrix(rnorm(p^2),p,p))
+#' M2[1,] <- M2[,1] <- 0
 #' sdb <- sim_diag(M1=M1,M2=M2,tol=10^-10,return_diags=TRUE)
 #' Q <- sdb$diagonalizer
 #' QM1Q <- t(Q) %*% M1 %*% Q
@@ -62,6 +62,11 @@ binsearchtol <- function(fun, tol=0.01, range, ...){
 #' range(QM2Q -diag(sdb$M2diag))
 #' range(Q %*% sdb$inverse_diagonalizer - diag(p))
 #' range(sdb$inverse_diagonalizer %*% Q - diag(p))
+#' 
+#' # if M1 is not p.d., a warning is produced, but the computation
+#' # proceeds by switching M1 & M2, and then switching them back.
+#' sdb <- sim_diag(M1=M2,M2=M1,tol=10^-10,return_diags=TRUE)
+
 sim_diag <- function(M1,M2, eigenM1=NULL, eigenM2=NULL, tol = 10^-4, return_diags=FALSE){
 	
 	if(!isSymmetric(M1)) stop('M1 must be symmetric')
@@ -234,7 +239,7 @@ set_QP_unconstrained_eq_0 <- function(M,v,k,tol){
 
 min_QP_unconstrained <- function(M,v,tol){
 	# minimize x'Mx+v'x
-	# if M can be invertible (after zero elements are discarded), then solution is when
+	# if M can be invertible (after zero elements are discarded), then solution satisfies
 	# 2Mx + v=0; (-1/2)M^-1 v = x
 	BIG <- (1/tol)^4 #To avoid Inf*0 issues
 
@@ -314,8 +319,8 @@ min_QP_unconstrained <- function(M,v,tol){
 #' @param b_vec see details below
 #' @param k see details below
 #' @param tol a calculation tolerance variable used at several points in the algorithm.
-#' @param eigen_A_mat (optional) the precalculated result \code{eigen(A_mat)}, where A_mat is defined in the optimization problem below.
-#' @param eigen_B_mat (optional) the precalculated result \code{eigen(B_mat)}, where B_mat is defined in the optimization problem below.
+#' @param eigen_A_mat (optional) the precalculated result \code{eigen(A_mat)}.
+#' @param eigen_B_mat (optional) the precalculated result \code{eigen(B_mat)}.
 #' @param verbose show progress from calculation
 #' @import quadprog
 #' @return a list with elements

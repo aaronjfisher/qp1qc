@@ -25,7 +25,7 @@ If \code{return_diags = FALSE}, the matrix Q is returned. Otherwise, a list with
 \itemize{
 		\item{diagonalizer}{ - the matrix Q}
 	\item{inverse_diagonalizer}{ - the inverse of Q}
-	\item{M1diag}{ - the diagonal elements of (Q' M1 Q), which will all be ones}
+	\item{M1diag}{ - the diagonal elements of (Q' M1 Q)}
 	\item{M2diag}{ - the diagonal elements of (Q' M2 Q)}
 }
 }
@@ -37,9 +37,9 @@ This function determines an invertible matrix Q such that (Q' M1 Q) is an identi
 }
 \examples{
 p <- 5
-M1 <- diag(p) + crossprod(matrix(rnorm(p^2),p,p))
-M1[1,] <- M1[,1] <- 0
-M2 <- diag(p)+2
+M1 <- diag(p)+2
+M2 <- diag(p) + crossprod(matrix(rnorm(p^2),p,p))
+M2[1,] <- M2[,1] <- 0
 sdb <- sim_diag(M1=M1,M2=M2,tol=10^-10,return_diags=TRUE)
 Q <- sdb$diagonalizer
 QM1Q <- t(Q) \%*\% M1 \%*\% Q
@@ -48,4 +48,8 @@ range(QM1Q -diag(sdb$M1diag))
 range(QM2Q -diag(sdb$M2diag))
 range(Q \%*\% sdb$inverse_diagonalizer - diag(p))
 range(sdb$inverse_diagonalizer \%*\% Q - diag(p))
+
+# if M1 is not p.d., a warning is produced, but the computation
+# proceeds by switching M1 & M2, and then switching them back.
+sdb <- sim_diag(M1=M2,M2=M1,tol=10^-10,return_diags=TRUE)
 }

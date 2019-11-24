@@ -20,9 +20,9 @@ solve_QP1QC(A_mat, a_vec, B_mat, b_vec, k, tol = 10^-7,
 
 \item{tol}{a calculation tolerance variable used at several points in the algorithm.}
 
-\item{eigen_B_mat}{(optional) the precalculated result \code{eigen(B_mat)}, where B_mat is defined in the optimization problem below.}
+\item{eigen_B_mat}{(optional) the precalculated result \code{eigen(B_mat)}.}
 
-\item{eigen_A_mat}{(optional) the precalculated result \code{eigen(A_mat)}, where A_mat is defined in the optimization problem below.}
+\item{eigen_A_mat}{(optional) the precalculated result \code{eigen(A_mat)}.}
 
 \item{verbose}{show progress from calculation}
 }
